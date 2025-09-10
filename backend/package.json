@@ -18,6 +18,7 @@
   "type": "commonjs",
   "dependencies": {
     "@sendgrid/mail": "^8.1.5",
+    "@upstash/redis": "^1.35.3",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
