@@ -1,25 +1,26 @@
-require("dotenv").config({ path: "../.env" });
-const express = require("express");
-const cors = require("cors");
-const http = require("http"); // Needed for Socket.io
-const { sequelize } = require("./config/database");
-const initSocket = require("./websocket/socket"); // WebSocket handlers
+import { configDotenv } from "dotenv";
+import express, { json, urlencoded } from "express";
+import cors from "cors";
+import { createServer } from "http"; // Needed for Socket.io
+import sequelize from "./config/database.js";
+import initSocket from "./websocket/socket.js"; // WebSocket handlers
 
 // Routes
-const boardRoutes = require("./routes/boards");
-const columnRoutes = require("./routes/columns");
-const cardRoutes = require("./routes/cards");
-const auditLogRoutes = require("./routes/auditLogs");
-const authRoutes = require("./routes/auth");
-const authenticate = require("./middleware/auth");
+import boardRoutes from "./routes/boards.js";
+import columnRoutes from "./routes/columns.js";
+import cardRoutes from "./routes/cards.js";
+import auditLogRoutes from "./routes/auditLogs.js";
+import authRoutes from "./routes/auth.js";
+import authenticate from "./middleware/auth.js";
 
+configDotenv({path:"../.env"});
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ===== Middleware =====
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(json());
+app.use(urlencoded({ extended: true }));
 
 // ===== API Routes =====
 app.post("/api/boards", authenticate, boardRoutes);
@@ -45,7 +46,7 @@ app.get("/db-test", async (req, res) => {
 });
 
 // ===== Create HTTP Server & Socket.io =====
-const server = http.createServer(app);
+const server = createServer(app);
 initSocket(server); // Initialize WebSocket with Redis
 
 // ===== Start Server =====

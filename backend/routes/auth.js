@@ -1,10 +1,11 @@
-const express = require("express");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const { User } = require("../models/User");
-const { RefreshToken } = require("../models/RefreshToken");
-
-const router = express.Router();
+import { Router } from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import  User from "../models/User.js";
+import RefreshToken from "../models/RefreshToken.js";
+import { configDotenv } from "dotenv";
+configDotenv({path:"../.env"});
+const router = Router();
 
 // Register
 router.post("/register", async (req, res) => {
@@ -72,4 +73,4 @@ router.post("/logout", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,6 +1,6 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
-const Board = require("./Board");
+import { DataTypes } from "sequelize";
+import sequelize from "../config/database.js";
+import Board from "./Board.js";
 
 const Column = sequelize.define("column", {
   id: {
@@ -23,4 +23,4 @@ const Column = sequelize.define("column", {
 Column.belongsTo(Board, { foreignKey: "boardId" });
 Board.hasMany(Column, { foreignKey: "boardId" });
 
-module.exports = Column;
+export default Column;

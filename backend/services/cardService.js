@@ -1,4 +1,4 @@
-const Card = require("../models/Card");
+import Card from "../models/Card.js";
 
 async function getCards(req, res) {
   try {
@@ -43,4 +43,4 @@ async function deleteCard(req, res) {
   }
 }
 
-module.exports = { getCards, createCard, updateCard, deleteCard };
+export default { getCards, createCard, updateCard, deleteCard };

@@ -1,6 +1,6 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
-const { User } = require("./User");
+import { DataTypes } from "sequelize";
+import sequelize from "../config/database.js";
+import  User from "./User.js";
 
 const RefreshToken = sequelize.define("RefreshToken", {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
@@ -10,4 +10,4 @@ const RefreshToken = sequelize.define("RefreshToken", {
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });
 
-module.exports = { RefreshToken };
+export default RefreshToken;

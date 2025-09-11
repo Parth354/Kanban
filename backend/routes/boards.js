@@ -1,10 +1,11 @@
-const express = require("express");
-const { getBoards, createBoard, getBoardById, deleteBoard } = require("../services/boardService");
-const router = express.Router();
+import { Router } from "express";
+import s from "../services/boardService.js";
+const { getBoards, createBoard, getBoardById, deleteBoard } =s;
+const router = Router();
 
 router.get("/", getBoards);
 router.post("/", createBoard);
 router.get("/:id", getBoardById);
 router.delete("/:id", deleteBoard);
 
-module.exports = router;
+export default router;

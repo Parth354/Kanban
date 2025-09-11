@@ -1,4 +1,4 @@
-const Board = require("../models/Board");
+import Board from "../models/Board.js";
 
 async function getBoards(req, res) {
   try {
@@ -39,4 +39,4 @@ async function deleteBoard(req, res) {
   }
 }
 
-module.exports = { getBoards, getBoardById, createBoard, deleteBoard };
+export default { getBoards, getBoardById, createBoard, deleteBoard };

@@ -1,7 +1,7 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
-const User = require("./User");
-const Board = require("./Board");
+import { DataTypes } from "sequelize";
+import sequelize from "../config/database.js";
+import User from "./User.js";
+import Board from "./Board.js";
 
 const AuditLog = sequelize.define("auditLog", {
   id: {
@@ -24,4 +24,4 @@ const AuditLog = sequelize.define("auditLog", {
 AuditLog.belongsTo(User, { foreignKey: "userId" });
 AuditLog.belongsTo(Board, { foreignKey: "boardId" });
 
-module.exports = AuditLog;
+export default AuditLog;

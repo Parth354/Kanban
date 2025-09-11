@@ -1,10 +1,11 @@
-const express = require("express");
-const { getColumns, createColumn, updateColumn, deleteColumn } = require("../services/columnService");
-const router = express.Router();
+import { Router } from "express";
+import columnService from "../services/columnService.js";
+const { getColumns, createColumn, updateColumn, deleteColumn } = columnService
+const router = Router();
 
 router.get("/:boardId", getColumns);
 router.post("/", createColumn);
 router.put("/:id", updateColumn);
 router.delete("/:id", deleteColumn);
 
-module.exports = router;
+export default router;

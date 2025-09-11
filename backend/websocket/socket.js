@@ -1,10 +1,6 @@
-const { Server } = require("socket.io");
-const {
-  addUserToBoard,
-  removeUserFromBoard,
-  getUsersInBoard,
-} = require("../services/boardRedisService");
-
+import { Server } from "socket.io";
+import s from "../services/boardRedisService.js";
+const  { addUserToBoard , removeUserFromBoard ,getUsersInBoard} =s;
 function initSocket(server) {
   const io = new Server(server, {
     cors: { origin: "*", methods: ["GET", "POST"] },
@@ -77,4 +73,4 @@ function initSocket(server) {
   });
 }
 
-module.exports = initSocket;
+export default initSocket;

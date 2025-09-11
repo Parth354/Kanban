@@ -1,7 +1,7 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
-const Column = require("./Column");
-const User = require("./User");
+import { DataTypes } from "sequelize";
+import sequelize from "../config/database.js";
+import Column from "./Column.js";
+import User from "./User.js";
 
 const Card = sequelize.define("card", {
   id: {
@@ -31,4 +31,4 @@ Column.hasMany(Card, { foreignKey: "columnId" });
 Card.belongsTo(User, { foreignKey: "assigneeId" });
 User.hasMany(Card, { foreignKey: "assigneeId" });
 
-module.exports = Card;
+export default Card;

@@ -1,8 +1,9 @@
-const express = require("express");
-const { getLogs, createLog } = require("../services/auditLogService");
-const router = express.Router();
+import { Router } from "express";
+import auditLog from "../services/auditLogService.js";
+const { getLogs, createLog } =auditLog
+const router = Router();
 
 router.get("/:boardId", getLogs);
 router.post("/", createLog);
 
-module.exports = router;
+export default router;

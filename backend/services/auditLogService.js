@@ -1,4 +1,4 @@
-const AuditLog = require("../models/AuditLog");
+import AuditLog from "../models/AuditLog.js";
 
 async function getLogs(req, res) {
   try {
@@ -22,4 +22,4 @@ async function createLog(req, res) {
   }
 }
 
-module.exports = { getLogs, createLog };
+export default { getLogs, createLog };

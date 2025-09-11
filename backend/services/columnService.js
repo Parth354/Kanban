@@ -1,4 +1,4 @@
-const Column = require("../models/Column");
+import Column from "../models/Column.js";
 
 async function getColumns(req, res) {
   try {
@@ -43,4 +43,4 @@ async function deleteColumn(req, res) {
   }
 }
 
-module.exports = { getColumns, createColumn, updateColumn, deleteColumn };
+export default { getColumns, createColumn, updateColumn, deleteColumn };

@@ -1,6 +1,6 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
-const User = require("./User");
+import { DataTypes } from "sequelize";
+import sequelize from "../config/database.js";
+import User from "./User.js";
 
 const Board = sequelize.define("board", {
   id: {
@@ -19,4 +19,4 @@ const Board = sequelize.define("board", {
 Board.belongsTo(User, { foreignKey: "ownerId" });
 User.hasMany(Board, { foreignKey: "ownerId" });
 
-module.exports = Board;
+export default Board;

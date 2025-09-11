@@ -1,10 +1,11 @@
-const express = require("express");
-const { getCards, createCard, updateCard, deleteCard } = require("../services/cardService");
-const router = express.Router();
+import { Router } from "express";
+import cardService from "../services/cardService.js";
+const { getCards, createCard, updateCard, deleteCard } = cardService;
+const router = Router();
 
 router.get("/:columnId", getCards);
 router.post("/", createCard);
 router.put("/:id", updateCard);
 router.delete("/:id", deleteCard);
 
-module.exports = router;
+export default router;
