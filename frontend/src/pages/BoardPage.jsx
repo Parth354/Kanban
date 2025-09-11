@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import useBoardStore from '../store/boardStore';
 import useAuthStore from '../store/authStore';
-import socketService from '../services/socketService';
+import socketService from '../services/SocketService';
 import Column from '../components/Column';
 import CardModal from '../components/CardModal';
 import AddColumn from '../components/AddColumn';

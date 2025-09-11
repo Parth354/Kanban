@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axiosClient from '../api/axiosClient';
-import socketService from '../services/socketService';
+import socketService from '../services/SocketService';
 
 const useAuthStore = create(
   persist(
