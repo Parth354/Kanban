@@ -1,40 +1,57 @@
-# Multi-stage build for production
+# ---- STAGE 1: Builder ----
+# This stage builds both the frontend and backend in a full Node.js environment.
 FROM node:18-alpine AS builder
 
-# Build frontend
+# Set the working directory for the entire build stage
+WORKDIR /app
+
+# --- Build Frontend ---
+# Copy only package files first to leverage Docker layer caching
+COPY frontend/package*.json ./frontend/
 WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci --only=production
+RUN npm ci
+
+# Copy the rest of the frontend source and build it
 COPY frontend/ ./
 RUN npm run build
 
-# Build backend  
+# --- Build Backend ---
 WORKDIR /app/backend
 COPY backend/package*.json ./
+# For the backend, we ONLY install production dependencies
 RUN npm ci --only=production
+
+# Copy the rest of the backend source
 COPY backend/ ./
 
-# Production stage
+
+# ---- STAGE 2: Production ----
+# This stage creates the final, small, and secure image.
 FROM node:18-alpine AS production
+
+# IMPORTANT: Set the environment to production for optimizations in Express and other libraries.
+ENV NODE_ENV=production
+
 WORKDIR /app
 
-# Copy backend files
+# Copy the built backend (with node_modules) from the builder stage
 COPY --from=builder /app/backend ./
 
-# Copy built frontend files to be served by backend
+# CRITICAL: Copy the built frontend into a 'public' directory
+# This is where our Express server will look for the static files.
 COPY --from=builder /app/frontend/build ./public
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
-USER nodejs
+# Create a non-root user for better security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
 
-# Expose port
+# Expose the port the app will run on (Render will use the PORT env var)
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+# Healthcheck to ensure the application is running correctly
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD [ "node", "-e", "require('http').get('http://localhost:3000/health', (res) => process.exit(res.statusCode == 200 ? 0 : 1))" ]
 
-# Start the application
-CMD ["npm", "start"]
+# The command to start the application
+# This will run the "start" script from your backend's package.json
+CMD [ "npm", "start" ]
