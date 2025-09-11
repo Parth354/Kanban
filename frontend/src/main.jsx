@@ -1,25 +1,13 @@
-import React from "react";
-import { createRoot } from "react-dom/client";
-import App from "./App";
-import { AuthProvider } from "./context/AuthContext";
-import { BoardProvider } from "./context/BoardContext";
-import { PresenceProvider } from "./context/PresenceContext";
-import { NotificationProvider } from "./context/NotificationContext";
-import { SocketProvider } from "./context/SocketContext";
-import "./index.css";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import App from './App';
+import NotificationContainer from './components/ui/NotificationContainer'; // We need to create this!
 
-createRoot(document.getElementById("root")).render(
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
   <React.StrictMode>
-    <AuthProvider>
-      <SocketProvider>
-        <BoardProvider>
-          <PresenceProvider>
-            <NotificationProvider>
-              <App />
-            </NotificationProvider>
-          </PresenceProvider>
-        </BoardProvider>
-      </SocketProvider>
-    </AuthProvider>
+    <App />
+    <NotificationContainer /> {/* Add this component to render notifications globally */}
   </React.StrictMode>
 );

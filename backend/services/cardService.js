@@ -3,6 +3,7 @@ import { checkBoardMembership } from './boardService.js';
 import auditLogService from './auditLogService.js';
 import notificationService from './notificationService.js';
 import sequelize from '../config/database.js';
+import emailService from './emailService.js';
 import { Op } from 'sequelize';
 
 const getCardDetails = async (cardId, userId) => {
@@ -93,27 +94,34 @@ const moveCard = async (cardId, { newColumnId, newPosition }, userId) => {
     }
 };
 
-const assignUserToCard = async (cardId, assigneeId, currentUserId) => {
-    const card = await Card.findByPk(cardId);
+export const assignUserToCard = async (cardId, assigneeId, currentUserId) => {
+    const card = await Card.findByPk(cardId, { include: ['board'] });
     if (!card) throw new Error('Card not found.');
-
     await checkBoardMembership(card.boardId, currentUserId);
-    if (assigneeId) { // Check if assignee is also a member
-        await checkBoardMembership(card.boardId, assigneeId);
-    }
-    
+
+    const previousAssigneeId = card.assigneeId;
     card.assigneeId = assigneeId;
     await card.save();
 
-    const assignee = await User.findByPk(assigneeId);
-    await auditLogService.createLog({ boardId: card.boardId, userId: currentUserId, action: `assigned card "${card.title}" to ${assignee ? assignee.name : 'nobody'}` });
+    const assignee = assigneeId ? await User.findByPk(assigneeId) : null;
+    const currentUser = await User.findByPk(currentUserId);
     
-    if (assigneeId && assigneeId !== currentUserId) {
-        await notificationService.createNotification({
-            userId: assigneeId,
-            type: 'card_assigned',
-            data: { cardId, cardTitle: card.title, boardId: card.boardId, assignedByName: (await User.findByPk(currentUserId)).name }
+    await createLog({ /* ... log data ... */ });
+
+    // --- EMAIL NOTIFICATION LOGIC ---
+    // Send an email if a new user (who isn't themselves) is assigned.
+    if (assigneeId && assigneeId !== currentUserId && assigneeId !== previousAssigneeId) {
+      try {
+        await emailService.sendEmail({
+          to: assignee.email,
+          subject: `You have been assigned to a card: ${card.title}`,
+          text: `Hi ${assignee.name},\n\n${currentUser.name} has assigned you to the card "${card.title}" on the board "${card.board.title}".\n\nView it here: [Link to your app's board page]`,
+          html: `<p>Hi ${assignee.name},</p><p>${currentUser.name} has assigned you to the card "<strong>${card.title}</strong>" on the board "<strong>${card.board.title}</strong>".</p><p><a href="[Link to your app's board page]">View the board</a></p>`,
         });
+      } catch (emailError) {
+        console.error("Failed to send assignment email:", emailError);
+        // Do not block the main action if email fails
+      }
     }
 
     return card;

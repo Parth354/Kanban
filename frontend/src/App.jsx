@@ -1,41 +1,37 @@
-import React, { useContext } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import BoardList from "./components/BoardList";
-import Board from "./components/Board";
-import Login from "./pages/Login.jsx";
-import Register from "./pages/Register.jsx";
-import { AuthContext } from "./context/AuthContext";
-
-// Protected Route Wrapper
-function PrivateRoute({ children }) {
-  const { accessToken } = useContext(AuthContext);
-  return accessToken ? children : <Navigate to="/login" replace />;
-}
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import BoardPage from './pages/BoardPage';
+import DashboardPage from './pages/DashboardPage';
+import ProtectedRoute from './components/layout/ProtectedRoute';
+import MainLayout from './components/layout/MainLayout';
+import useAuthStore from './store/authStore';
 
 function App() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   return (
     <Router>
       <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        
         {/* Protected Routes */}
-        <Route
-          path="/"
+        <Route 
+          path="/*"
           element={
-            <PrivateRoute>
-              <BoardList />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/board/:id"
-          element={
-            <PrivateRoute>
-              <Board />
-            </PrivateRoute>
-          }
+            <ProtectedRoute>
+              <MainLayout>
+                <Routes>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/boards/:boardId" element={<BoardPage />} />
+                  {/* Redirect to a default board or dashboard */}
+                  <Route path="/" element={<Navigate to="/dashboard" />} />
+                </Routes>
+              </MainLayout>
+            </ProtectedRoute>
+          } 
         />
       </Routes>
     </Router>

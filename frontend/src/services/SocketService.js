@@ -1,53 +1,80 @@
-import { io } from "socket.io-client";
+import { io } from 'socket.io-client';
+import useBoardStore from '../store/boardStore';
+import useNotificationStore from '../store/notificationStore';
 
-export default class SocketService {
-  constructor({ url, getAuth = () => null, onConnect = () => {} } = {}) {
-    this.url = url;
-    this.getAuth = getAuth;
-    this.socket = null;
-    this.onConnect = onConnect;
+const SOCKET_URL = import.meta.env.REACT_APP_SOCKET_URL || 'http://localhost:3000';
+
+class SocketService {
+  socket;
+
+  connect(token) {
+    // Prevent multiple connections
+    if (this.socket && this.socket.connected) return;
+
+    // Disconnect any existing instance before creating a new one
+    if (this.socket) {
+        this.socket.disconnect();
+    }
+
+    this.socket = io(SOCKET_URL, {
+      auth: { token }
+    });
+
+    this.socket.on('connect', () => {
+      console.log('✅ WebSocket connected:', this.socket.id);
+    });
+
+    this.setupListeners();
   }
 
-  connect() {
-    if (this.socket) return this.socket;
-    const token = this.getAuth();
-    this.socket = io(this.url, {
-      autoConnect: true,
-      transports: ["websocket"],
-      auth: { token },
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+  setupListeners() {
+    // Listener for when the list of online users on a board is updated
+    this.socket.on('presence-update', (users) => {
+      console.log('Received presence-update:', users);
+      useBoardStore.getState().setOnlineUsers(users);
     });
 
-    this.socket.on("connect", () => {
-      this.onConnect();
-      console.log("socket connected", this.socket.id);
+    // Listen for events that indicate another user changed something
+    const remoteUpdateEvents = ['card-created', 'card-updated', 'card-moved', 'card-deleted'];
+    remoteUpdateEvents.forEach(event => {
+      this.socket.on(event, (data) => {
+        console.log(`Received remote event '${event}':`, data);
+        useBoardStore.getState().handleRemoteUpdate();
+        // Optionally, push a notification
+        useNotificationStore.getState().addNotification(`Board was updated by another user.`);
+      });
     });
 
-    this.socket.on("disconnect", (reason) => {
-      console.log("socket disconnected", reason);
+    this.socket.on('disconnect', () => {
+      console.log('❌ WebSocket disconnected');
     });
 
-    return this.socket;
+    this.socket.on('connect_error', (err) => {
+      console.error('WebSocket connection error:', err.message);
+    });
   }
 
   disconnect() {
-    if (!this.socket) return;
-    this.socket.disconnect();
-    this.socket = null;
+    if (this.socket) {
+      console.log('Disconnecting WebSocket...');
+      this.socket.disconnect();
+      this.socket = null;
+    }
   }
 
-  emit(event, payload) {
-    if (this.socket) this.socket.emit(event, payload);
+  // --- Emitters ---
+  joinBoard(boardId, userId) {
+    if (this.socket) {
+      this.socket.emit('join-board', { boardId, userId });
+    }
   }
 
-  on(event, cb) {
-    if (!this.socket) return;
-    this.socket.on(event, cb);
-  }
-
-  off(event, cb) {
-    if (!this.socket) return;
-    this.socket.off(event, cb);
+  leaveBoard(boardId, userId) {
+    if (this.socket) {
+      this.socket.emit('leave-board', { boardId, userId });
+    }
   }
 }
+
+const socketService = new SocketService();
+export default socketService;

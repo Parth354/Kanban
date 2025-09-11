@@ -1,49 +1,75 @@
-import React, { useState, useEffect } from "react";
-import Card from "./Card";
-import axios from "axios";
+import React from 'react';
+import { Droppable, Draggable } from '@hello-pangea/dnd';
+import Card from './Card';
+import { Plus, Trash2 } from 'lucide-react';
 
-const API_URL = "http://localhost:3000/api/cards";
-
-function Column({ column, boardId }) {
-  const [cards, setCards] = useState([]);
-  const [cardTitle, setCardTitle] = useState("");
-
-  useEffect(() => {
-    fetchCards();
-  }, []);
-
-  const fetchCards = async () => {
-    const res = await axios.get(`${API_URL}/${column.id}`);
-    setCards(res.data);
-  };
-
-  const addCard = async () => {
-    if (!cardTitle) return;
-    const res = await axios.post(API_URL, { columnId: column.id, title: cardTitle, position: cards.length + 1 });
-    setCards([...cards, res.data]);
-    setCardTitle("");
+const Column = ({ column, cards = [], index, onAddCard, onEditCard, onDeleteColumn }) => {
+  const handleDelete = () => {
+    if (window.confirm(`Are you sure you want to delete the "${column.title}" list? All cards within it will also be deleted.`)) {
+      onDeleteColumn(column.id);
+    }
   };
 
   return (
-    <div className="w-64 bg-gray-100 p-2 rounded flex-shrink-0">
-      <h2 className="font-bold mb-2">{column.title}</h2>
-      <div className="space-y-2 mb-2">
-        {cards.map((card) => (
-          <Card key={card.id} card={card} />
-        ))}
-      </div>
-      <input
-        type="text"
-        placeholder="New card title"
-        value={cardTitle}
-        onChange={(e) => setCardTitle(e.target.value)}
-        className="border p-1 w-full mb-1 rounded"
-      />
-      <button onClick={addCard} className="bg-green-500 text-white px-2 py-1 rounded w-full">
-        Add Card
-      </button>
-    </div>
+    <Draggable draggableId={column.id} index={index}>
+      {(provided) => (
+        <div
+          {...provided.draggableProps}
+          ref={provided.innerRef}
+          className="flex flex-col w-80 bg-gray-200 rounded-lg p-2 flex-shrink-0 h-full"
+        >
+          {/* Column Header */}
+          <div
+            {...provided.dragHandleProps}
+            className="flex items-center justify-between font-bold text-lg mb-2 px-2 text-gray-700 cursor-grab"
+          >
+            <span className="flex-1 truncate pr-2">{column.title}</span>
+            <button
+              onClick={handleDelete}
+              className="p-1 rounded-md hover:bg-gray-300 text-gray-500 hover:text-red-600 transition-colors"
+              aria-label={`Delete column ${column.title}`}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Cards Area */}
+          <div className="flex-1 overflow-y-auto">
+            <Droppable droppableId={column.id} type="CARD">
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`min-h-[100px] rounded-lg transition-colors p-1 ${
+                    snapshot.isDraggingOver ? 'bg-blue-100' : 'bg-gray-200'
+                  }`}
+                >
+                  {cards.map((card, idx) => (
+                    <Card
+                      key={card.id}
+                      card={card}
+                      index={idx}
+                      onEditCard={onEditCard}
+                    />
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </div>
+
+          {/* Add Card Button */}
+          <button
+            onClick={() => onAddCard(column.id)}
+            className="mt-2 flex items-center justify-start w-full p-2 text-gray-600 hover:bg-gray-300 rounded-md flex-shrink-0 transition-colors"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            <span>Add a card</span>
+          </button>
+        </div>
+      )}
+    </Draggable>
   );
-}
+};
 
 export default Column;
