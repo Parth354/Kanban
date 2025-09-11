@@ -1,57 +1,52 @@
 # ---- STAGE 1: Builder ----
-# This stage builds both the frontend and backend in a full Node.js environment.
+# Builds both frontend and backend
 FROM node:18-alpine AS builder
 
-# Set the working directory for the entire build stage
+# Set the working directory
 WORKDIR /app
 
-# --- Build Frontend ---
-# Copy only package files first to leverage Docker layer caching
+# --- Build Frontend (Vite) ---
 COPY frontend/package*.json ./frontend/
 WORKDIR /app/frontend
+# Install all dependencies, including devDependencies needed for the build
 RUN npm ci
 
-# Copy the rest of the frontend source and build it
 COPY frontend/ ./
+# This command creates the '/app/frontend/dist' directory
 RUN npm run build
 
 # --- Build Backend ---
 WORKDIR /app/backend
 COPY backend/package*.json ./
-# For the backend, we ONLY install production dependencies
+# For the backend, only production dependencies are needed in the final image
 RUN npm ci --only=production
-
-# Copy the rest of the backend source
 COPY backend/ ./
 
 
 # ---- STAGE 2: Production ----
-# This stage creates the final, small, and secure image.
+# Creates the final, small, and secure image
 FROM node:18-alpine AS production
 
-# IMPORTANT: Set the environment to production for optimizations in Express and other libraries.
 ENV NODE_ENV=production
-
 WORKDIR /app
 
-# Copy the built backend (with node_modules) from the builder stage
+# Copy the built backend (with its node_modules) from the builder stage
 COPY --from=builder /app/backend ./
 
-# CRITICAL: Copy the built frontend into a 'public' directory
-# This is where our Express server will look for the static files.
-COPY --from=builder /app/frontend/build ./public
+# Copy the contents of the 'dist' folder (the Vite build output)
+# into the 'public' folder, which the Express server will use to serve static files.
+COPY --from=builder /app/frontend/dist ./public
 
-# Create a non-root user for better security
+# Create and switch to a non-root user for better security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
-# Expose the port the app will run on (Render will use the PORT env var)
-EXPOSE 3000
+# Expose the port. Render will set the PORT env var.
+EXPOSE 5000
 
 # Healthcheck to ensure the application is running correctly
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD [ "node", "-e", "require('http').get('http://localhost:3000/health', (res) => process.exit(res.statusCode == 200 ? 0 : 1))" ]
+  CMD [ "node", "-e", "require('http').get('http://localhost:5000/health', (res) => process.exit(res.statusCode == 200 ? 0 : 1))" ]
 
-# The command to start the application
-# This will run the "start" script from your backend's package.json
+# The command to start the Node.js server
 CMD [ "npm", "start" ]
