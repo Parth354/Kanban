@@ -20,7 +20,7 @@ const Sidebar = () => {
           <span className="ml-3">Dashboard</span>
         </NavLink>
         {/* Replace with a dynamic list of projects */}
-        <NavLink to="/boards/1" className={navLinkClass}>
+        <NavLink to="/boards/8cee52b7-f8ac-4be5-aadb-9f504084fb9a" className={navLinkClass}>
           <Trello className="w-5 h-5" />
           <span className="ml-3">Sample Project</span>
         </NavLink>
