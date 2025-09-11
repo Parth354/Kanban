@@ -1,52 +1,41 @@
 # ---- STAGE 1: Builder ----
-# Builds both frontend and backend
 FROM node:18-alpine AS builder
-
-# Set the working directory
 WORKDIR /app
 
-# --- Build Frontend (Vite) ---
+# --- Build Frontend ---
 COPY frontend/package*.json ./frontend/
 WORKDIR /app/frontend
-# Install all dependencies, including devDependencies needed for the build
 RUN npm ci
-
-COPY frontend/ ./
-# This command creates the '/app/frontend/dist' directory
+COPY frontend/ .
 RUN npm run build
 
 # --- Build Backend ---
 WORKDIR /app/backend
 COPY backend/package*.json ./
-# For the backend, only production dependencies are needed in the final image
 RUN npm ci --only=production
-COPY backend/ ./
-
+COPY backend/ .
 
 # ---- STAGE 2: Production ----
-# Creates the final, small, and secure image
 FROM node:18-alpine AS production
-
 ENV NODE_ENV=production
 WORKDIR /app
 
-# Copy the built backend (with its node_modules) from the builder stage
+# Copy backend (including node_modules) from builder
 COPY --from=builder /app/backend ./
 
-# Copy the contents of the 'dist' folder (the Vite build output)
-# into the 'public' folder, which the Express server will use to serve static files.
+# Copy built frontend to backend/public for Express static serving
 COPY --from=builder /app/frontend/dist ./public
 
-# Create and switch to a non-root user for better security
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Create and switch to non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:appgroup /app
 USER appuser
 
-# Expose the port. Render will set the PORT env var.
-EXPOSE 5000
+# Expose port (match your Express default)
+EXPOSE 3000
 
-# Healthcheck to ensure the application is running correctly
+# Healthcheck (optional but good)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD [ "node", "-e", "require('http').get('http://localhost:5000/health', (res) => process.exit(res.statusCode == 200 ? 0 : 1))" ]
+  CMD node -e "require('http').get('http://localhost:3000/health', res => process.exit(res.statusCode === 200 ? 0 : 1))"
 
-# The command to start the Node.js server
-CMD [ "npm", "start" ]
+# Start backend
+CMD ["npm", "start"]
