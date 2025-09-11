@@ -1,25 +1,23 @@
-import AuditLog from "../models/AuditLog.js";
+import { AuditLog, User } from '../models/index.js';
+import { checkBoardMembership } from './boardService.js';
 
-async function getLogs(req, res) {
+const getLogsByBoard = async (boardId, userId) => {
+  await checkBoardMembership(boardId, userId);
+  return await AuditLog.findAll({
+    where: { boardId },
+    include: [{ model: User, attributes: ['id', 'name', 'avatar_url'] }],
+    order: [['createdAt', 'DESC']],
+    limit: 100,
+  });
+};
+
+const createLog = async (logData) => {
   try {
-    const logs = await AuditLog.findAll({
-      where: { boardId: req.params.boardId },
-      order: [["createdAt", "DESC"]],
-    });
-    res.json(logs);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch logs" });
+    return await AuditLog.create(logData);
+  } catch (error) {
+    console.error("Failed to create audit log:", error);
+    // Don't throw an error, as logging failure should not stop the main action
   }
-}
+};
 
-async function createLog(req, res) {
-  try {
-    const { userId, boardId, action, payload } = req.body;
-    const log = await AuditLog.create({ userId, boardId, action, payload });
-    res.status(201).json(log);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to create log" });
-  }
-}
-
-export default { getLogs, createLog };
+export default { getLogsByBoard, createLog };

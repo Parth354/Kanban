@@ -1,7 +1,5 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
-import Column from "./Column.js";
-import User from "./User.js";
 
 const Card = sequelize.define("card", {
   id: {
@@ -20,15 +18,19 @@ const Card = sequelize.define("card", {
   position: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    defaultValue: 0,
+  },
+  priority: {
+    type: DataTypes.ENUM("low", "medium", "high"),
+    defaultValue: "medium",
+  },
+  due_date: {
+    type: DataTypes.DATE,
+    allowNull: true,
   },
 }, {
   timestamps: true,
+  underscored: true,
 });
-
-Card.belongsTo(Column, { foreignKey: "columnId" });
-Column.hasMany(Card, { foreignKey: "columnId" });
-
-Card.belongsTo(User, { foreignKey: "assigneeId" });
-User.hasMany(Card, { foreignKey: "assigneeId" });
 
 export default Card;

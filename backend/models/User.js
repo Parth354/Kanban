@@ -7,21 +7,32 @@ const User = sequelize.define("user", {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
-  password_hash: { 
-    type: DataTypes.TEXT,
-     allowNull: false 
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
   },
   email: {
     type: DataTypes.STRING,
     unique: true,
     allowNull: false,
+    validate: {
+      isEmail: true,
+    },
   },
-  name: {
+  password_hash: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+  },
+  avatar_url: {
     type: DataTypes.STRING,
     allowNull: true,
+    validate: {
+      isUrl: true,
+    },
   },
 }, {
   timestamps: true,
+  underscored: true,
 });
 
 export default User;

@@ -1,6 +1,5 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
-import User from "./User.js";
 
 const Board = sequelize.define("board", {
   id: {
@@ -12,11 +11,17 @@ const Board = sequelize.define("board", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  visibility: {
+    type: DataTypes.ENUM("private", "team", "public"),
+    defaultValue: "private",
+  },
 }, {
   timestamps: true,
+  underscored: true,
 });
-
-Board.belongsTo(User, { foreignKey: "ownerId" });
-User.hasMany(Board, { foreignKey: "ownerId" });
 
 export default Board;

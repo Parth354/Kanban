@@ -22,6 +22,9 @@ const AuditLog = sequelize.define("auditLog", {
 });
 
 AuditLog.belongsTo(User, { foreignKey: "userId" });
+User.hasMany(AuditLog, { foreignKey: "userId" });
+
 AuditLog.belongsTo(Board, { foreignKey: "boardId" });
+Board.hasMany(AuditLog, { foreignKey: "boardId" });
 
 export default AuditLog;
