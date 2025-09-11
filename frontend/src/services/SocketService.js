@@ -2,7 +2,7 @@ import { io } from 'socket.io-client';
 import useBoardStore from '../store/boardStore';
 import useNotificationStore from '../store/notificationStore';
 
-const SOCKET_URL = import.meta.env.REACT_APP_SOCKET_URL || 'http://localhost:3000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
 
 class SocketService {
   socket;
