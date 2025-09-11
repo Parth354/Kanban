@@ -1,5 +1,9 @@
+// File: backend/websocket/boardEvents.js
 import boardRedisService from '../services/boardRedisService.js';
-import { User } from '../models/index.js'; // User model
+import { User } from '../models/index.js';
+
+// A simple regex to validate if a string is in UUID format.
+const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 /**
  * Registers all handlers for board-related WebSocket events on a given socket.
@@ -9,49 +13,63 @@ import { User } from '../models/index.js'; // User model
  */
 export function registerBoardHandlers(io, socket, socketUserMap) {
   /**
-   * Helper to fetch full user objects for all user IDs currently in a board.
+   * (HELPER FUNCTION)
+   * Fetches full user details for all valid user IDs currently in a board from Redis.
    * @param {string} boardId
-   * @returns {Promise<Array<{id:number,name:string,avatar_url:string|null}>>}
+   * @returns {Promise<Array<object>>} An array of user objects ({ id, name, avatar_url }).
    */
   const getFullUsersInBoard = async (boardId) => {
-    const userIds = await boardRedisService.getUsersInBoard(boardId);
-    if (!userIds || userIds.length === 0) return [];
+    let userIds = await boardRedisService.getUsersInBoard(boardId);
 
-    // Ensure IDs are an array of numbers (if your DB uses integers)
-    const ids = userIds.map((id) => Number(id));
+    // --- ROBUSTNESS FIX ---
+    // Filter the array from Redis to ensure every ID is a valid, non-empty UUID string.
+    // This cleans up any potential bad data and prevents crashes.
+    const validUserIds = userIds.filter(id => id && typeof id === 'string' && isUuid.test(id));
 
+    if (validUserIds.length === 0) {
+      return [];
+    }
+
+    // Query the database only with the clean, validated list of UUIDs.
     return User.findAll({
-      where: { id: ids },
+      where: { id: validUserIds },
       attributes: ['id', 'name', 'avatar_url'],
     });
   };
 
   // ---- Join Board ----
-  socket.on('join-board', async ({ boardId, userId }) => {
-    if (!boardId || !userId) {
-      socket.emit('error', { message: 'boardId and userId are required to join.' });
-      return;
-    }
-
+  socket.on('join-board', async (payload) => {
     try {
+      const { boardId, userId } = payload;
+      
+      // --- INPUT VALIDATION FIX ---
+      // Ensure the payload from the client is valid before processing.
+      if (!boardId || !userId || !isUuid.test(userId)) {
+        console.error("Invalid join-board payload received:", payload);
+        socket.emit('error', { message: 'Invalid boardId or userId provided.' });
+        return;
+      }
+      
       socket.join(boardId);
       socketUserMap.set(socket.id, { boardId, userId });
 
       await boardRedisService.addUserToBoard(boardId, userId);
 
+      // Get and broadcast the updated presence list.
       const users = await getFullUsersInBoard(boardId);
       io.to(boardId).emit('presence-update', users);
 
       console.log(`✅ User ${userId} (${socket.id}) joined board ${boardId}`);
     } catch (err) {
-      console.error(`❌ join-board error (user ${userId}, board ${boardId}):`, err);
+      console.error(`❌ join-board error (user ${payload?.userId}, board ${payload?.boardId}):`, err);
     }
   });
 
   // ---- Leave Board ----
-  socket.on('leave-board', async ({ boardId, userId }) => {
-    if (!boardId || !userId) return;
+  socket.on('leave-board', async (payload) => {
+    if (!payload || !payload.boardId || !payload.userId) return;
 
+    const { boardId, userId } = payload;
     try {
       socket.leave(boardId);
       socketUserMap.delete(socket.id);
@@ -67,35 +85,22 @@ export function registerBoardHandlers(io, socket, socketUserMap) {
     }
   });
 
-  // ---- Disconnect cleanup ----
-  socket.on('disconnect', async () => {
-    const entry = socketUserMap.get(socket.id);
-    if (!entry) return;
+  // ---- Note on Disconnect ----
+  // The primary disconnect logic should live in `socketHandler.js` as it is now.
+  // This ensures cleanup happens even if `leave-board` is not explicitly emitted.
+  // We do not need a duplicate 'disconnect' listener here.
 
-    const { boardId, userId } = entry;
-    socketUserMap.delete(socket.id);
-
-    try {
-      await boardRedisService.removeUserFromBoard(boardId, userId);
-      const users = await getFullUsersInBoard(boardId);
-      io.to(boardId).emit('presence-update', users);
-
-      console.log(`🔌 Socket ${socket.id} disconnected; removed user ${userId} from board ${boardId}`);
-    } catch (err) {
-      console.error(`❌ disconnect cleanup error for socket ${socket.id}:`, err);
-    }
-  });
-
-  // ---- Generic broadcast helper ----
+  // ---- Generic Broadcast Helper ----
   const broadcastToBoard = (eventName) => {
     socket.on(eventName, (data) => {
-      if (data?.boardId) {
+      // Broadcast to all other clients in the room.
+      if (data && data.boardId) {
         socket.to(data.boardId).emit(eventName, data);
       }
     });
   };
 
-  // Register broadcast events
+  // Register all broadcast events
   [
     'card-created',
     'card-updated',

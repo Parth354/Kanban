@@ -113,7 +113,7 @@ const BoardPage = () => {
         isOpen={cardModalState.isOpen}
         onClose={handleCloseCardModal}
         onSave={handleSaveCard}
-        onDelete={handleDeleteCard} // *** THE FIX IS HERE ***
+        onDelete={handleDeleteCard} 
         cardData={cardModalState.card}
         columnId={cardModalState.columnId}
       />

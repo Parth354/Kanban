@@ -1,8 +1,9 @@
+// File: backend/services/columnService.js
 import { Column } from '../models/index.js';
 import { checkBoardMembership } from './boardService.js';
 import sequelize from '../config/database.js';
-
-const getColumnsByBoard = async (boardId, userId) => {
+import { Op } from 'sequelize';
+export const getColumnsByBoard = async (boardId, userId) => {
   await checkBoardMembership(boardId, userId);
   return await Column.findAll({
     where: { boardId },
@@ -10,14 +11,14 @@ const getColumnsByBoard = async (boardId, userId) => {
   });
 };
 
-const createColumnForBoard = async (columnData, userId) => {
+export const createColumnForBoard = async (columnData, userId) => {
   await checkBoardMembership(columnData.boardId, userId);
   const maxPosition = await Column.max('position', { where: { boardId: columnData.boardId } });
   const position = (maxPosition === null) ? 0 : maxPosition + 1;
   return await Column.create({ ...columnData, position });
 };
 
-const updateColumn = async (columnId, updateData, userId) => {
+export const updateColumn = async (columnId, updateData, userId) => {
   const column = await Column.findByPk(columnId);
   if (!column) throw new Error('Column not found.');
   await checkBoardMembership(column.boardId, userId);
@@ -25,7 +26,7 @@ const updateColumn = async (columnId, updateData, userId) => {
   return column;
 };
 
-const deleteColumn = async (columnId, userId) => {
+export const deleteColumn = async (columnId, userId) => {
   const column = await Column.findByPk(columnId);
   if (!column) throw new Error('Column not found.');
   await checkBoardMembership(column.boardId, userId);
@@ -33,17 +34,26 @@ const deleteColumn = async (columnId, userId) => {
   return { message: 'Column deleted successfully.' };
 };
 
-const moveColumn = async (columnId, newPosition, userId) => {
+export const moveColumn = async (columnId, newPosition, userId) => {
+  if (newPosition === undefined || newPosition < 0) {
+    const error = new Error('Invalid newPosition provided.');
+    error.statusCode = 400;
+    throw error;
+  }
+
   const t = await sequelize.transaction();
   try {
     const columnToMove = await Column.findByPk(columnId, { transaction: t });
-    if (!columnToMove) throw new Error('Column not found.');
+    if (!columnToMove) {
+        const error = new Error('Column not found.');
+        error.statusCode = 404;
+        throw error;
+    }
     await checkBoardMembership(columnToMove.boardId, userId);
 
     const oldPosition = columnToMove.position;
     if (oldPosition === newPosition) return columnToMove;
 
-    // Shift other columns
     if (oldPosition < newPosition) {
       await Column.update(
         { position: sequelize.literal('position - 1') },
@@ -65,12 +75,4 @@ const moveColumn = async (columnId, newPosition, userId) => {
     await t.rollback();
     throw error;
   }
-};
-
-export {
-  getColumnsByBoard,
-  createColumnForBoard,
-  updateColumn,
-  deleteColumn,
-  moveColumn
 };

@@ -16,7 +16,7 @@ const AddColumn = ({ boardId }) => {
   }, [isEditing]);
 
   const handleFormSubmit = (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
     if (title.trim()) {
       addColumn({ boardId, title });
       setTitle('');
@@ -28,7 +28,7 @@ const AddColumn = ({ boardId }) => {
     return (
       <button
         onClick={() => setIsEditing(true)}
-        className="flex-shrink-0 flex items-center w-80 h-10 px-3 bg-white/20 hover:bg-white/30 rounded-lg text-white font-semibold transition-colors"
+        className="flex-shrink-0 flex items-center w-80 h-10 px-3 bg-white/20 hover:bg-black/30 rounded-lg font-semibold transition-colors"
       >
         <Plus className="w-5 h-5 mr-2" />
         Add another list
@@ -50,7 +50,7 @@ const AddColumn = ({ boardId }) => {
         <div className="mt-2 flex items-center">
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600  rounded-md hover:bg-blue-700"
           >
             Add list
           </button>
