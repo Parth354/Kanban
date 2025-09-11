@@ -1,11 +1,16 @@
-import {Sequelize} from "sequelize"
+import dns from "dns";
+dns.setDefaultResultOrder("ipv4first");
+
+import { Sequelize } from "sequelize";
 import { configDotenv } from "dotenv";
-configDotenv({path:"../.env"})
+
+configDotenv({ path: "../.env" });
+
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: "postgres",
   protocol: "postgres",
   dialectOptions: {
-    ssl: { require: true, rejectUnauthorized: false } // for Supabase
+    ssl: { require: true, rejectUnauthorized: false }
   },
   logging: false,
 });
